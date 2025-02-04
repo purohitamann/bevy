@@ -3,7 +3,7 @@ datasource db {
   url        = env("DIRECT_URL")
   extensions = [uuid_ossp(map: "uuid-ossp")]
 }
-
+g
 generator client {
   provider        = "prisma-client-js"
   previewFeatures = ["postgresqlExtensions"]
