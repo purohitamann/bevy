@@ -2,7 +2,6 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
 import { supabase } from "@/utils/supabase";
 import { useRouter } from "next/navigation";
-import { prisma } from "@/utils/prisma";
 
 interface AuthContextProps {
     user: any;
@@ -23,36 +22,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const router = useRouter();
 
     // 🟣 1. Sign Up
-    const signUp = async (username: string, email: string, password: string) => {
-        try {
-            // 👉 A) Create user in Supabase Auth
-            const { data, error } = await supabase.auth.signUp({ email, password });
-            if (error) {
-                throw new Error(error.message);
-            }
-
-            const userId = data?.user?.id;
-            if (!userId) {
-                throw new Error("Supabase user not found after signup.");
-            }
-
-            // 👉 B) Create user in Prisma DB with the same ID
-            await prisma.user.create({
-                data: {
-                    id: userId, // Must match the supabase auth user ID
-                    email,
-                    username,
-                },
-            });
-
-            // 👉 C) Update local state & redirect
-            setUser(data.user);
-            router.push("/home");
-        } catch (err: any) {
-            console.error("Signup failed:", err.message);
-            throw err; // re-throw for your UI to catch
+    const signUp = async (username: String, email: string, password: string) => {
+        const { data, error } = await supabase.auth.signUp({
+            email: email,
+            password: password
+        })
+        console.log(data)
+        if (error) {
+            return console.log(error)
         }
-    };
+        const { data: dataUser, error: errorUser } = await supabase.from('User').insert([{
+            id: data?.user?.id, email: email, username: username
+        }])
+        console.log(dataUser)
+        if (errorUser) {
+            return console.log(errorUser)
+        }
+        setUser(data);
+        return data
+        // getUser(data?.user?.id)
+
+        // router.push('/(tabs)');
+    }
+
 
     // 🟣 2. Sign In
     const signIn = async (email: string, password: string) => {
@@ -61,6 +53,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             if (error) {
                 throw new Error(error.message);
             }
+            console.log("SignIn successful:", data);
             setUser(data.user);
             router.push("/home");
         } catch (err: any) {

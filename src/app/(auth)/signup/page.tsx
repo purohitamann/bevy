@@ -1,5 +1,4 @@
 "use client";
-
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/providers/AuthProvider";
@@ -30,10 +29,14 @@ const Signup = () => {
         }
 
         try {
-            await signUp(username, email, password);
+            // Call the signUp function from AuthProvider
+            const user = await signUp(username, email, password);
+
             console.log("User created successfully");
-            router.push("/home"); // Uncomment if you want to redirect here
-        } catch (err) {
+            // Redirect or perform other actions after successful signup
+            // router.push("/dashboard");
+
+        } catch (err: any) {
             setError("Failed to create an account. Try again.");
             console.error(err);
         }
@@ -98,6 +101,7 @@ const Signup = () => {
                         disabled={!username || !email || !password}
                         whileHover={{ scale: 1.03 }}
                         whileTap={{ scale: 0.97 }}
+
                     >
                         Sign Up
                     </motion.button>
