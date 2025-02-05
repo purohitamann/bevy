@@ -31,7 +31,7 @@ const Signup = () => {
             await signUp(username, email, password, fullName);
             console.log("User created successfully");
             router.push("/home"); // Redirect after signup
-        } catch (err: any) {
+        } catch (err: unknown) {
             setError("Failed to create an account. Try again.");
             console.error(err);
         }

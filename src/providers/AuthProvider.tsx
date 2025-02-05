@@ -4,10 +4,12 @@ import { supabase } from "@/utils/supabase";
 import { useRouter, usePathname } from "next/navigation";
 
 interface AuthContextProps {
-    user: any;
+    user: unknown;
     signUp: (username: string, email: string, password: string, fullName?: string) => Promise<void>;
     signIn: (email: string, password: string) => Promise<void>;
     signOut: () => Promise<void>;
+    getUser: (id: string) => Promise<void>;
+
 }
 
 export const AuthContext = createContext<AuthContextProps>({
@@ -15,10 +17,11 @@ export const AuthContext = createContext<AuthContextProps>({
     signUp: async () => { },
     signIn: async () => { },
     signOut: async () => { },
+    getUser: async () => { }
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-    const [user, setUser] = useState<any>(null);
+    const [user, setUser] = useState<unknown>(null);
     const router = useRouter();
     const pathname = usePathname();
 
@@ -53,8 +56,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             await getUser(userId);
             router.push("/home");
 
-        } catch (error: any) {
-            console.error("Signup failed:", error.message);
+        } catch (error: unknown) {
+            console.error("Signup failed:", error);
         }
     };
 
@@ -67,8 +70,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             console.log("SignIn successful:", data);
             await getUser(data?.user?.id);
             router.push("/home");
-        } catch (error: any) {
-            console.error("SignIn failed:", error.message);
+        } catch (error: unknown) {
+            console.error("SignIn failed:", error);
         }
     };
 
@@ -80,8 +83,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
             setUser(null);
             router.push("/login");
-        } catch (error: any) {
-            console.error("SignOut failed:", error.message);
+        } catch (error: unknown) {
+            console.error("SignOut failed:", error);
         }
     };
 
@@ -104,7 +107,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }, []);
 
     return (
-        <AuthContext.Provider value={{ user, signUp, signIn, signOut }}>
+        <AuthContext.Provider value={{ user, signUp, signIn, signOut, getUser }}>
             {children}
         </AuthContext.Provider>
     );

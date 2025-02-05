@@ -9,8 +9,14 @@ import { supabase } from "@/utils/supabase";
  * Dark-themed Home Page with Framer Motion animations.
  * Uses vibrant colors: #36C5F0, #2EB67D, #ECB22E, #E01E5A.
  */
+interface User {
+    full_name: string;
+
+}
+
 const Home = () => {
-    const { user, signOut } = useAuth();
+    const { user, signOut, getUser } = useAuth() as unknown as { user: User; signOut: () => Promise<void>; getUser: () => Promise<User> };
+
     const router = useRouter();
     const [totalUsers, setTotalUsers] = useState(0);
 
@@ -19,14 +25,14 @@ const Home = () => {
             const { data, error } = await supabase.from("User").select("*");
             if (error) throw error;
             setTotalUsers(data.length);
-        } catch (error: any) {
-            console.error("Error fetching total users:", error.message);
+        } catch (error: unknown) {
+            console.error("Error fetching total users:", error);
         }
     };
 
     useEffect(() => {
         fetchTotalUsers();
-    }, []);
+    }, [router, getUser]);
 
     return (
         <motion.div
@@ -60,7 +66,7 @@ const Home = () => {
                     Welcome, <span className="text-[#2EB67D]">{user?.full_name || "User"}!</span>
                 </motion.h2>
 
-                <p className="mt-2 text-gray-300">You're now logged in.</p>
+                <p className="mt-2 text-gray-300">You&apos;re now logged in.</p>
 
                 <motion.button
                     className="w-full py-3 mt-6 text-white font-semibold rounded transition duration-300 ease-in-out bg-gradient-to-r from-[#36C5F0] to-[#2EB67D] hover:from-[#ECB22E] hover:to-[#E01E5A]"

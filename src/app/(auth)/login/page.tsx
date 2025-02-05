@@ -29,7 +29,7 @@ const Login = () => {
             await signIn(email, password);
             console.log("User signed in successfully");
             router.push("/home"); // Redirect to home after login
-        } catch (err: any) {
+        } catch (err: unknown) {
             setError("Invalid email or password.");
             console.error(err);
         }
@@ -90,7 +90,7 @@ const Login = () => {
                 </motion.form>
 
                 <p className="text-center mt-4 text-gray-400">
-                    Don't have an account?{" "}
+                    Don&apos;t have an account?{" "}
                     <a href="/signup" className="text-[#36C5F0] hover:underline">
                         Sign Up
                     </a>
