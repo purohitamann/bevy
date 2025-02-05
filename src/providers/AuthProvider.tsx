@@ -1,11 +1,11 @@
 "use client";
 import React, { createContext, useState, useContext, useEffect } from "react";
 import { supabase } from "@/utils/supabase";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 
 interface AuthContextProps {
     user: any;
-    signUp: (username: string, email: string, password: string) => Promise<void>;
+    signUp: (username: string, email: string, password: string, fullName?: string) => Promise<void>;
     signIn: (email: string, password: string) => Promise<void>;
     signOut: () => Promise<void>;
 }
@@ -20,73 +20,86 @@ export const AuthContext = createContext<AuthContextProps>({
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [user, setUser] = useState<any>(null);
     const router = useRouter();
+    const pathname = usePathname();
 
-    // 🟣 1. Sign Up
-    const signUp = async (username: String, email: string, password: string) => {
-        const { data, error } = await supabase.auth.signUp({
-            email: email,
-            password: password
-        })
-        console.log(data)
+    // 🟢 Get User Data from Supabase
+    const getUser = async (id: string) => {
+        const { data, error } = await supabase.from('User').select('*').eq('id', id).single();
         if (error) {
-            return console.log(error)
-        }
-        const { data: dataUser, error: errorUser } = await supabase.from('User').insert([{
-            id: data?.user?.id, email: email, username: username
-        }])
-        console.log(dataUser)
-        if (errorUser) {
-            return console.log(errorUser)
+            console.error("Error fetching user:", error.message);
+            return;
         }
         setUser(data);
-        return data
-        // getUser(data?.user?.id)
+        console.log("User data:", data);
+    };
 
-        // router.push('/(tabs)');
-    }
+    // 🟢 Sign Up
+    const signUp = async (username: string, email: string, password: string, fullName?: string) => {
+        try {
+            // 👉 1. Sign up the user with Supabase Auth
+            const { data, error } = await supabase.auth.signUp({ email, password });
+            if (error) throw error;
 
+            const userId = data?.user?.id;
+            if (!userId) throw new Error("User ID not found after signup.");
 
-    // 🟣 2. Sign In
+            // 👉 2. Insert user into 'User' table in Supabase
+            const { error: dbError } = await supabase.from('User').insert([
+                { id: userId, email, username, full_name: fullName }
+            ]);
+            if (dbError) throw dbError;
+
+            // 👉 3. Fetch user data and update state
+            await getUser(userId);
+            router.push("/home");
+
+        } catch (error: any) {
+            console.error("Signup failed:", error.message);
+        }
+    };
+
+    // 🟢 Sign In
     const signIn = async (email: string, password: string) => {
         try {
             const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-            if (error) {
-                throw new Error(error.message);
-            }
+            if (error) throw error;
+
             console.log("SignIn successful:", data);
-            setUser(data.user);
+            await getUser(data?.user?.id);
             router.push("/home");
-        } catch (err: any) {
-            console.error("SignIn failed:", err.message);
-            throw err;
+        } catch (error: any) {
+            console.error("SignIn failed:", error.message);
         }
     };
 
-    // 🟣 3. Sign Out
+    // 🟢 Sign Out
     const signOut = async () => {
         try {
             const { error } = await supabase.auth.signOut();
-            if (error) throw new Error(error.message);
+            if (error) throw error;
+
             setUser(null);
             router.push("/login");
-        } catch (err: any) {
-            console.error("SignOut failed:", err.message);
+        } catch (error: any) {
+            console.error("SignOut failed:", error.message);
         }
     };
 
-    // 🟣 4. Keep track of auth state changes
+    // 🟢 Auth State Listener
     useEffect(() => {
-        const { data: subscription } = supabase.auth.onAuthStateChange(
-            (_event, session) => {
-                if (!session?.user) {
-                    setUser(null);
-                } else {
-                    setUser(session.user);
+        const { data: authData } = supabase.auth.onAuthStateChange((_event, session) => {
+            if (session?.user) {
+                getUser(session.user.id);
+            } else {
+                setUser(null);
+                if (pathname !== "/signup" && pathname !== "/login") {
+                    router.push("/login");
                 }
             }
-        );
+        });
+
         return () => {
-            subscription?.subscription.unsubscribe();
+            authData.subscription.unsubscribe();
         };
     }, []);
 
